@@ -29,8 +29,10 @@ import static org.junit.jupiter.api.Assertions.*;
 @Rollback(false)
 class MemberRepositoryTest {
 
-    @Autowired MemberRepository memberRepository;
-    @Autowired TeamRepository teamRepository;
+    @Autowired
+    MemberRepository memberRepository;
+    @Autowired
+    TeamRepository teamRepository;
     @PersistenceContext
     EntityManager entityManager;
 
@@ -261,5 +263,32 @@ class MemberRepositoryTest {
 
         //then
 
+    }
+
+    @Test
+    public void queryHint() {
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        entityManager.flush(); // 실제 DB에 Query가 나감, but 영속성 컨텍스트에는 남아있음!
+        entityManager.clear(); // 영속성 컨텍스트에 남아있지 않은 상태로 만듦
+
+        //when
+        Member findMember = memberRepository.findReadOnlyByUsername("member1");
+        findMember.setUsername("member2");
+
+        entityManager.flush(); // 변경 감지 동작 // dirty checking
+    }
+
+    @Test
+    public void lock() {
+        //given
+        Member member1 = new Member("member1", 10);
+        memberRepository.save(member1);
+        entityManager.flush(); // 실제 DB에 Query가 나감, but 영속성 컨텍스트에는 남아있음!
+        entityManager.clear(); // 영속성 컨텍스트에 남아있지 않은 상태로 만듦
+
+        //when
+        List<Member> result = memberRepository.findLockByUsername("member1");
     }
 }
